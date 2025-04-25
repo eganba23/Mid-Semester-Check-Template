@@ -1,0 +1,473 @@
+---
+title: "Mid Semester Check"
+author: "Benjamin Egan"
+date: "04/25/2025"
+output: github_document
+---
+
+As part of a portfolio piece, I looked at the Tidy Tuesday from April 20th, 2025. The Tidy Tuesday for that week explored fatal crashes on 4/20, the "marijuana holiday." My portfolio piece examined the dataset and provided evidence that there is actually no link between crashes and inhibition due to marijuana. I'm going to attempt to build a "check assignment" for students. This could serve as a portfolio piece, an extra lab, or an additional assignment you provide students. This could also serve as a "final project" for students in the undergraduate version of the course. You could also simply not use any of this (which would be sad but understandable). You'll have to make aesthetically pleasing, but this is hopefully a base start.
+
+
+# Tidy Tuesday - 4/20/2025
+
+In January of 2019, Harper and Palayew (2019) published a study looking at whether a signal could be detected in fatal car crashes in the United States based on the "4/20" holiday, based on a previous study by Staples and Redelmeier (2018) that suggested a strong link. Using more robust methods and a more comprehensive time window, Harper and Palayew could not find a signal for 4/20, but could for other holidays. The Tidy Tuesday for the week of April 20th explored this data, examining fatal crashes from 1992 to 2016.
+
+## Getting started 
+
+### Packages
+
+In this lab we will work with the **tidyverse**, **ggplot2**, **corrr** packages.
+
+```{r load-packages, message = FALSE, warning = FALSE}
+library(tidyverse) 
+library(ggplot2)
+#library(skimr)
+library(corrr)
+
+```
+
+### Loading the data
+
+The data we will be using comes from the Tidy Tuesday Github. You can download the data using the following: 
+
+```{r setup}
+
+tuesdata <- tidytuesdayR::tt_load(2025, week = 16)
+
+daily_accidents <- tuesdata$daily_accidents
+daily_accidents_420 <- tuesdata$daily_accidents_420
+
+```
+
+## Exercises
+
+### Part 1: The relationship between dates and car crashes
+
+Before determining any relationship between fatal car crashes in the United States and the "4/20" holiday, we need to start by examining if there is any relationship between car crashes and dates.
+
+1. Start by taking a look through the data. What kinds of data are provided? How is the data structured?
+
+1A. Students will answer with something like "there's two variables, one with date and the other with number of fatal car crashes.
+
+2. Separate out `date` into it's relevant components. You should now have separate variables for year, month, and day. <br/>
+Hint: Try creating a data frame that includes date, year, month, day, and the fatal crashes.
+
+2A. There should probably be some scaffolding here. I am thinking to include below:
+```{r scaffolding for separate out date, eval = FALSE}
+# Scaffolding ------------------------------------------------------------------------------------------------------
+daily_accidents <- data.frame(
+                 # date variable,
+                 year = as.numeric(format(daily_accidents$date, format = "%Y")),
+                 # repeat for both month and day,
+                 # fatal car crashes
+                )
+
+```
+
+```{r separate out date}
+# Answer ------------------------------------------------------------------------------------------------------
+daily_accidents <- data.frame(date = daily_accidents$date,
+                 year = as.numeric(format(daily_accidents$date, format = "%Y")),
+                 month = as.numeric(format(daily_accidents$date, format = "%m")),
+                 day = as.numeric(format(daily_accidents$date, format = "%d")),
+                 daily_accidents$fatalities_count)
+
+names(daily_accidents)[names(daily_accidents) == "daily_accidents.fatalities_count"] <- "fatalities"
+
+head(daily_accidents)
+
+```
+
+3. Now that we have separate variables, we can begin to examine trends in fatal car crashes. Find the following correlations using `cor()`:
+  a. days of the month and fatal car crashes
+  b. months of the year and fatal car crashes
+  c. years and fatal car crashes
+
+Hint: Plug ?cor() into your console to get information about how to run a correlation
+
+3A. 
+```{r correlation dates to fatalities}
+
+day_corr <- cor(daily_accidents$day, daily_accidents$fatalities)
+
+month_corr <- cor(daily_accidents$month, daily_accidents$fatalities)
+
+year_corr <- cor(daily_accidents$year, daily_accidents$fatalities)
+
+dates_corr <- tibble(day_corr, month_corr, year_corr)
+
+dates_corr
+```
+
+4. What does each correlation tell you? How helpful is each correlation in determining information about fatal car crashes?
+
+4A. Answers can vary. The idea is that there should be no correlation for day, a positive correlation for month, and negative for year. Days shouldn't matter, months kinda matters, years really matters.
+
+Sometimes statistics don't tell you everything about the relationships present in the data. A helpful way to further understand the relationships is to plot the data and correlations.
+
+5. Plot the relationship between days and the number of fatalities. Does the correlation calculated in question 3 make sense based on the data? <br/>
+Stretch: Can you add in a `geom_smooth()` line to represent the correlation and `geom_point()` to add the mean number of crashes per day?
+
+5A. This plot is slightly over engineered. They should answer that it's random and day has no relationship to car crash.
+
+```{r day corr visual}
+# this was done out of order, so I had to move this up. It normally lives under the month visual
+
+daily_accidents_visual <- daily_accidents %>%
+  mutate(month_cat = case_when(
+    month == 1 ~ "January",
+    month == 2 ~ "February",
+    month == 3 ~ "March",
+    month == 4 ~ "April",
+    month == 5 ~ "May",
+    month == 6 ~ "June",
+    month == 7 ~ "July",
+    month == 8 ~ "August",
+    month == 9 ~ "September",
+    month == 10 ~ "October",
+    month == 11 ~ "November",
+    month == 12 ~ "December"
+  ))
+
+# daily ------------------------------------------------------------
+
+daily_means <- daily_accidents_visual %>%
+  group_by(day) %>%
+  summarise(mean_fatalities = mean(fatalities, na.rm = TRUE))
+
+daily_accidents_visual %>%
+  ggplot(aes(
+    x = day,
+    y = fatalities
+  ))+
+  geom_jitter(alpha = .4, width = .25, color = "gray")+
+  geom_point(data = daily_means, aes(x = day, y = mean_fatalities), color = "blue", size = 2) +
+  geom_smooth(color = "black", alpha = .6)+
+  theme_bw()+
+  labs(
+    x = "Days",
+    y = "Number of Fatalities",
+    title = "Fatal car crashes by day"
+  )
+
+```
+
+6. Plot the relationship between month and the number of fatalities. Does the correlation calculated in question 3 make sense based on the data?
+
+6A. I'm expecting plots to look like the first one, but the second plot will be much easier to read. In this case, students should see that there is a possible relationship. They should also see that the data isn't linear and hopefully remember that January follows December. If they remember, then it makes more sense that there is a "high" and "low"season.
+
+```{r month corr visual}
+
+month_regression <- lm(fatalities ~ month, data = daily_accidents_visual)
+
+
+month_r_values <- tibble(
+  month = 1:12,
+  month_cat = factor(month.name, levels = month.name),
+  pred = predict(month_regression, newdata = tibble(month = 1:12))
+)
+
+
+daily_accidents_visual %>%
+  ggplot(aes(
+    x = month,
+    y = fatalities
+  ))+
+  geom_jitter(alpha = .4, width = .25)+
+  geom_line(data = month_r_values, 
+            aes(x = month, y = pred, group = 1), 
+            color = "blue", 
+            size = 1) +
+  theme_bw()+
+  labs(
+    x = "Month",
+    y = "Number of Fatal car crashes",
+    title = "Fatal car crashes by month"
+  )
+```
+
+This one is a stretch, since it changed the x axis to be categorical data.
+```{r month corr visual stretch one}
+daily_accidents_visual %>%
+  ggplot(aes(
+    x = fct(month_cat),
+    y = fatalities
+  ))+
+  geom_jitter(alpha = .4, width = .25)+
+  geom_line(data = month_r_values, 
+            aes(x = month_cat, y = pred, group = 1), 
+            color = "blue", 
+            size = 1) +
+  theme_bw()+
+  labs(
+    x = "Month",
+    y = "Number of Fatal car crashes",
+    title = "Fatal car crashes by month"
+  )
+
+
+```
+
+Stretch: Can you change create a line using `geom_smooth()` that follows the non-linear trend of the months data?
+
+```{r month corr stretch 2}
+
+
+monthly_means <- daily_accidents_visual %>%
+  group_by(month_cat) %>%
+  summarise(mean_fatalities = mean(fatalities, na.rm = TRUE)) %>%
+  mutate(month_cat = factor(month_cat, levels = month.name))
+
+daily_accidents_visual %>%
+  ggplot(aes(
+    x = fct(month_cat),
+    y = fatalities
+  ))+
+  geom_jitter(alpha = .4, width = .25, color = "gray")+
+  geom_smooth(aes(x = month), 
+              method = "loess", 
+              se = FALSE, 
+              color = "blue", 
+              size = 1, 
+              data = daily_accidents_visual) +
+  geom_point(data = monthly_means, 
+             aes(x = month_cat, y = mean_fatalities), 
+             color = "tomato1", 
+             size = 2) +
+  theme_bw()+
+  labs(
+    x = "Month",
+    y = "Number of Fatalities in the month",
+    title = "Fatal car crashes by month with a non-linear line"
+  )
+
+```
+
+7. Plot the relationship between year and the number of fatalities. Does the correlation calculated in question 3 make sense based on the data?
+
+7A. Here there's much more interesting data to examine. If you needed to cut this down, I would only examine year. This is because year is the easiest to see that just the correlation doesn't provide evidence for everything.
+```{r corr year}
+
+year_means <- daily_accidents_visual %>%
+  group_by(year) %>%
+  summarise(mean_fatalities = mean(fatalities, na.rm = TRUE))
+
+
+
+daily_accidents_visual %>%
+  ggplot(aes(
+    x = year,
+    y = fatalities
+  ))+
+  geom_jitter(alpha = .4, width = .25, color = "gray")+
+  geom_smooth(color = "blue", alpha = .6)+
+  geom_point(data = year_means, aes(x = year, y = mean_fatalities), color = "coral3", size = 2) +
+  theme_bw()+
+  annotate("text", 
+           x = 1992, y = 60, 
+           label = "1992", 
+           vjust = 2, 
+           color = "black")+
+   annotate("text", 
+           x = 2016, y = 60, 
+           label = "2016", 
+           vjust = 2, 
+           color = "black")+
+  labs(
+    x = "Year",
+    y = "Number of Fatalities",
+    title = "Fatal car crashes by year"
+  )
+
+min(daily_accidents_visual$year)
+max(daily_accidents_visual$year)
+
+```
+
+### Part 2: Are specific days dangerous?
+
+8. What was the worst date for fatal car crashes?
+
+8A. November 3rd, 2007. There were 299 fatal car crashes.
+
+```{r most fatal day}
+
+daily_accidents %>%
+  arrange(desc(fatalities)) %>%
+head()
+
+```
+
+9. What was the worst day of the month for fatal car crashes?
+
+9A. A stretch can be asking which day of the month has the highest average number of fatal car crashes 
+```{r fatal days}
+
+daily_accidents %>%
+  distinct(day, fatalities) %>%
+    group_by(day) %>%
+  summarize(total_fatal = sum(fatalities)) %>%
+    arrange(desc(total_fatal)) %>%
+head()
+
+
+daily_accidents %>%
+  distinct(day, fatalities) %>%
+    group_by(day) %>%
+  summarize(avg_fatal = mean(fatalities)) %>%
+    arrange(desc(avg_fatal)) %>%
+head()
+
+```
+
+
+### Part 3: Is driving on April 20th truly more dangerous?
+
+10. Using a t-test, determine if there is a significant difference in car crashes for April 20th. To answer this question, examine `daily_accidents_420`. What does that third variable represent? Start by getting rid of any missing data and graph the results you find.
+
+10A. Students should find there is no difference. The graph shows this as well.
+```{r 420 fatalities}
+
+daily_accidents_420 <- daily_accidents_420 %>%
+  filter(!e420 == "NA")
+
+t.test(fatalities_count ~ e420, data = daily_accidents_420)
+
+daily_accidents_420 %>%
+  ggplot(aes(
+    x = e420,
+    y = fatalities_count
+  ))+
+  geom_jitter(width = .2)+
+  labs(
+    x = "Is it 4/20?",
+    y = "Fatal car crashes"
+  )
+  
+```
+
+
+Ass part of the article, Harper and Palayew (2019) could not find any signals that 4/20 is more dangerous than the average day. They did find other holidays, such as July 4th, were more dangerous.
+
+11. Repeat the process but for America's Independence day, July 4th. This time, there is no variable that designates if a date is July 4th. Using the modified `daily_accidents` you created, create variable `July4` that represents all dates that are July 4th. Then, use a t-test to determine if there is a significant difference in car crashes for July 4th and graph the results.
+
+11A. I wrote a function to figure this out. Overengineered? Yes. Is it cool? Also yes. This will be the next question's stretch goal. They should find that July 4th has higher car crashes than normal. 
+
+```{r function for yes and no var}
+day_oty <- function(name, specific_month, specific_day) {
+  daily_accidents %>%
+    mutate({{name}} := if_else(
+        day == specific_day & month == specific_month, "Yes", "No"
+      ))
+}
+
+```
+
+```{r 4th of july fatalities}
+
+july4 <- day_oty(july4, 7, 4)
+
+july4 %>%
+  ggplot(aes(
+    x = july4,
+    y = fatalities
+  ))+
+  geom_jitter(width = .2)+
+  labs(
+    x = "Is it July 4th?",
+    y = "Fatal car crashes"
+  )
+
+t.test(fatalities ~ july4, data = july4)
+
+```
+
+12. What about other holidays? See if Christmas (December 25th) and New Years Eve (December 31st) differ in car crashes from the average day. <br/>
+Stretch: Can you create a function that can do this?
+
+12A. The Christmas one is representative of what students would most likely create. Christmas and New Years are not significantly different. The answer for the stretch is above in the July 4th data.
+```{r christmas fatalities}
+
+Christmas <- daily_accidents %>%
+  mutate(Christmas = if_else(
+    day == 25 & month == 12, "Christmas", "Not Christmas"
+  ))
+
+Christmas %>%
+  ggplot(aes(
+    x = Christmas,
+    y = fatalities
+  ))+
+  geom_jitter(width = .2)+
+  labs(
+    x = "Is it Christmas?",
+    y = "Fatal car crashes"
+  )
+
+t.test(fatalities ~ Christmas, data = Christmas)
+
+
+```
+
+```{r new years fatalities}
+
+NYE <- day_oty(NYE, 12, 31)
+
+NYE %>%
+  ggplot(aes(
+    x = NYE,
+    y = fatalities
+  ))+
+  geom_jitter(width = .2)+
+  labs(
+    x = "Is it New years eve?",
+    y = "Fatal car crashes"
+  )
+
+t.test(fatalities ~ NYE, data = NYE)
+
+```
+
+
+Optional Stretch Question:
+
+13. How about holidays that change dates, such as Thanksgiving? Thanksgiving always falls on the 4th Thursday of November. For this, you will need to alter your function to count the number of Thursdays in November.
+
+13A. This accomplishses it, and can be altered to check for other holidays like Black Friday. Assuming everything is correct, they'll find that thanksgiving is no different than the average day.
+
+```{r thanksgiving function}
+
+daily_accidents <- daily_accidents %>%
+    mutate(date = make_date(year, month, day))
+
+check_thanksgiving <- function(df) {
+  
+  thanksgiving_flags <- df %>%
+    filter(month(date) == 11) %>%
+    arrange(date) %>%
+    group_by(year(date)) %>%
+    mutate(
+      weekday = wday(date, label = TRUE),
+      thursday_count = cumsum(weekday == "Thu"),
+      is_thanksgiving = if_else(weekday == "Thu" & thursday_count == 4, "Yes", "No")
+    ) %>%
+    ungroup() %>%
+    select(date, is_thanksgiving)
+
+  # Merge flags back into the main data
+  df %>%
+    left_join(thanksgiving_flags, by = "date") %>%
+    mutate(is_thanksgiving = replace_na(is_thanksgiving, "No"))
+  
+}
+
+
+thanksgiving_accidents <- check_thanksgiving(daily_accidents)
+
+head(thanksgiving_accidents)
+
+```
+
+[1]. Harper S, Palayew A "The annual cannabis holiday and fatal traffic crashes." BMJ Injury Prevention. Published Online First: 29 January 2019. doi: 10.1136/injuryprev-2018-043068. Manuscript and original data/code at https://osf.io/qnrg6/
+
+[2]. Staples JA, Redelmeier DA. "The April 20 cannabis celebration and fatal traffic crashes in the United States." JAMA Intern Med. 2018 Feb; 178(4):569–72.
