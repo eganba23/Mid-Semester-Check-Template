@@ -16,7 +16,7 @@ In January of 2019, Harper and Palayew (2019) published a study looking at wheth
 
 ### Packages
 
-In this lab we will work with the **tidyverse**, **ggplot2**, **corrr** packages.
+In this lab we will work with the **tidyverse**, **ggplot2**, and **corrr** packages.
 
 ```{r load-packages, message = FALSE, warning = FALSE}
 library(tidyverse) 
@@ -83,7 +83,7 @@ head(daily_accidents)
   b. months of the year and fatal car crashes
   c. years and fatal car crashes
 
-Hint: Plug ?cor() into your console to get information about how to run a correlation
+Hint: Plug ?cor() into your console to get more information about how to run a correlation
 
 3A. 
 ```{r correlation dates to fatalities}
@@ -101,14 +101,14 @@ dates_corr
 
 4. What does each correlation tell you? How helpful is each correlation in determining information about fatal car crashes?
 
-4A. Answers can vary. The idea is that there should be no correlation for day, a positive correlation for month, and negative for year. Days shouldn't matter, months kinda matters, years really matters.
+4A. Answers can vary. The idea is that r should be almost zero for day, an r around .25 correlation for month, and an r around -.25 for year. In a nutshell: Days doesn't matter, months kinda matters, years kinda matters.
 
 Sometimes statistics don't tell you everything about the relationships present in the data. A helpful way to further understand the relationships is to plot the data and correlations.
 
 5. Plot the relationship between days and the number of fatalities. Does the correlation calculated in question 3 make sense based on the data? <br/>
-Stretch: Can you add in a `geom_smooth()` line to represent the correlation and `geom_point()` to add the mean number of crashes per day?
+Stretch: Can you add in a `geom_smooth()` line to represent the correlation and use `geom_point()` to add the mean number of crashes per day?
 
-5A. This plot is slightly over engineered. They should answer that it's random and day has no relationship to car crash.
+5A. This plot is slightly over engineered. They should answer that it's random and day has no relationship to car crash. This stretch goal will also apply to the months and years plot
 
 ```{r day corr visual}
 # this was done out of order, so I had to move this up. It normally lives under the month visual
@@ -245,7 +245,8 @@ daily_accidents_visual %>%
 
 7. Plot the relationship between year and the number of fatalities. Does the correlation calculated in question 3 make sense based on the data?
 
-7A. Here there's much more interesting data to examine. If you needed to cut this down, I would only examine year. This is because year is the easiest to see that just the correlation doesn't provide evidence for everything.
+7A. Here there's much more interesting data to examine. If you needed to cut down this assignment, I would only examine year. Year is the easiest to see that just the correlation doesn't provide evidence for everything. You could also have them google driving in mid 2000s, and they should see that there were driving programs implementated around 2007/2008.
+
 ```{r corr year}
 
 year_means <- daily_accidents_visual %>%
@@ -284,7 +285,7 @@ max(daily_accidents_visual$year)
 
 ```
 
-### Part 2: Are specific days dangerous?
+### Part 2: Lets get more specific?
 
 8. What was the worst date for fatal car crashes?
 
@@ -325,7 +326,7 @@ head()
 
 10. Using a t-test, determine if there is a significant difference in car crashes for April 20th. To answer this question, examine `daily_accidents_420`. What does that third variable represent? Start by getting rid of any missing data and graph the results you find.
 
-10A. Students should find there is no difference. The graph shows this as well.
+10A. Students should find evidence that 420 actually has lower fatal car crashes, providing evidence to the contrary. The graph shows this as well.
 ```{r 420 fatalities}
 
 daily_accidents_420 <- daily_accidents_420 %>%
@@ -347,11 +348,11 @@ daily_accidents_420 %>%
 ```
 
 
-Ass part of the article, Harper and Palayew (2019) could not find any signals that 4/20 is more dangerous than the average day. They did find other holidays, such as July 4th, were more dangerous.
+As part of the article, Harper and Palayew (2019) could not find any signals that 4/20 is more dangerous than the average day. They did find other holidays, such as July 4th, were more dangerous.
 
 11. Repeat the process but for America's Independence day, July 4th. This time, there is no variable that designates if a date is July 4th. Using the modified `daily_accidents` you created, create variable `July4` that represents all dates that are July 4th. Then, use a t-test to determine if there is a significant difference in car crashes for July 4th and graph the results.
 
-11A. I wrote a function to figure this out. Overengineered? Yes. Is it cool? Also yes. This will be the next question's stretch goal. They should find that July 4th has higher car crashes than normal. 
+11A. I wrote a function to figure this out. Overengineered? Yes. Is it cool? Also yes. The function will be the next question's stretch goal, but I didn't want to include the code twice. Students should find that July 4th has higher car crashes than normal. 
 
 ```{r function for yes and no var}
 day_oty <- function(name, specific_month, specific_day) {
@@ -385,7 +386,7 @@ t.test(fatalities ~ july4, data = july4)
 12. What about other holidays? See if Christmas (December 25th) and New Years Eve (December 31st) differ in car crashes from the average day. <br/>
 Stretch: Can you create a function that can do this?
 
-12A. The Christmas one is representative of what students would most likely create. Christmas and New Years are not significantly different. The answer for the stretch is above in the July 4th data.
+12A. The Christmas one is representative of what students would most likely create. Christmas has lower fatalities and New Years is not significantly different. The answer for the stretch is above in the July 4th data.
 ```{r christmas fatalities}
 
 Christmas <- daily_accidents %>%
@@ -468,6 +469,23 @@ head(thanksgiving_accidents)
 
 ```
 
-[1]. Harper S, Palayew A "The annual cannabis holiday and fatal traffic crashes." BMJ Injury Prevention. Published Online First: 29 January 2019. doi: 10.1136/injuryprev-2018-043068. Manuscript and original data/code at https://osf.io/qnrg6/
+```{r thanksgiving difference}
 
-[2]. Staples JA, Redelmeier DA. "The April 20 cannabis celebration and fatal traffic crashes in the United States." JAMA Intern Med. 2018 Feb; 178(4):569–72.
+thanksgiving_accidents %>%
+  ggplot(aes(
+    x = is_thanksgiving,
+    y = fatalities
+  ))+
+  geom_jitter(width = .2)+
+  labs(
+    x = "Is it Thanksgiving?",
+    y = "Fatal car crashes"
+  )
+
+t.test(fatalities ~ is_thanksgiving, data = thanksgiving_accidents)
+
+```
+
+[1] Harper S, Palayew A "The annual cannabis holiday and fatal traffic crashes." BMJ Injury Prevention. Published Online First: 29 January 2019. doi: 10.1136/injuryprev-2018-043068. Manuscript and original data/code at https://osf.io/qnrg6/
+
+[2] Staples JA, Redelmeier DA. "The April 20 cannabis celebration and fatal traffic crashes in the United States." JAMA Intern Med. 2018 Feb; 178(4):569–72.
